@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialApp - Settings</title>
+    <link href="./css/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <div id="navbar-placeholder"></div>
+
+    <!-- Main Content -->
+    <div class="pt-16 pb-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+            
+            <div class="space-y-6">
+                <!-- Account Settings -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Account</h2>
+                    <div class="space-y-4">
+                        <a href="/edit-profile.html" class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Edit Profile</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Change Password</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Preferences -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Preferences</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3">
+                            <div>
+                                <span class="text-gray-700">Dark Mode</span>
+                                <p class="text-sm text-gray-500">Switch between light and dark theme</p>
+                            </div>
+                            <button id="themeToggle" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none">
+                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between p-3">
+                            <div>
+                                <span class="text-gray-700">Push Notifications</span>
+                                <p class="text-sm text-gray-500">Receive push notifications</p>
+                            </div>
+                            <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" checked>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Support</h2>
+                    <div class="space-y-4">
+                        <a href="#" class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Help Center</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Report a Problem</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Logout -->
+                <div class="card p-6">
+                    <button id="logoutBtn" class="w-full text-red-600 font-medium py-3 rounded-lg hover:bg-red-50 transition-colors duration-200">
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+
+## 🧱 Overall Structure
+
+You’ll have **3 core apps**:
+
+1. `users` → authentication, profile, following system
+2. `posts` → post creation, likes, comments, shares
+3. `chat` → 1-to-1 and group conversations, messages, file uploads
+
+Each app will be modular, with its own models, serializers, views, and routes.
+
+---
+
+## ⚙️ USERS APP
+
+### **Models**
+
+```python
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class User(AbstractUser):
+    bio = models.TextField(blank=True)
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    followers = models.ManyToManyField('self', symmetrical=False, related_name='following', blank=True)
+
+    def __str__(self):
+        return self.username
+```
+
+---
+
+### **Schema**
+
+| Field         | Type             | Notes                    |
+| ------------- | ---------------- | ------------------------ |
+| id            | UUID / AutoField | Primary Key              |
+| username      | string           | unique                   |
+| email         | string           | unique                   |
+| password      | string           | hashed                   |
+| bio           | text             | optional                 |
+| profile_image | file             | optional                 |
+| followers     | M2M(User)        | asymmetric follow system |
+
+---
+
+### **Endpoints**
+
+| Method    | Endpoint                     | Description          |
+| --------- | ---------------------------- | -------------------- |
+| POST      | `/api/auth/register/`        | Register new user    |
+| POST      | `/api/auth/login/`           | Obtain JWT token     |
+| GET       | `/api/users/me/`             | Current user profile |
+| GET       | `/api/users/{id}/`           | Other user profile   |
+| PUT/PATCH | `/api/users/me/`             | Update profile       |
+| POST      | `/api/users/{id}/follow/`    | Follow/unfollow      |
+| GET       | `/api/users/{id}/followers/` | List followers       |
+| GET       | `/api/users/{id}/following/` | List following       |
+
+---
+
+## 🖼️ POSTS APP
+
+### **Models**
+
+```python
+from django.db import models
+from django.conf import settings
+
+class Post(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='posts')
+    caption = models.TextField(blank=True)
+    image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    shared_from = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='shared_posts')
+
+    def __str__(self):
+        return f"{self.user.username}'s post"
+
+class Like(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')
+
+class Comment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+```
+
+---
+
+### **Schema Summary**
+
+| Model   | Fields                                            | Relationships      |
+| ------- | ------------------------------------------------- | ------------------ |
+| Post    | id, user, caption, image, created_at, shared_from | FK(User), FK(Post) |
+| Like    | id, user, post, created_at                        | FK(User), FK(Post) |
+| Comment | id, user, post, text, created_at                  | FK(User), FK(Post) |
+
+---
+
+### **Endpoints**
+
+| Method | Endpoint                    | Description       |
+| ------ | --------------------------- | ----------------- |
+| GET    | `/api/posts/`               | List posts (feed) |
+| POST   | `/api/posts/`               | Create post       |
+| GET    | `/api/posts/{id}/`          | Retrieve post     |
+| DELETE | `/api/posts/{id}/`          | Delete post       |
+| POST   | `/api/posts/{id}/like/`     | Like/unlike post  |
+| POST   | `/api/posts/{id}/share/`    | Share post        |
+| GET    | `/api/posts/{id}/comments/` | List comments     |
+| POST   | `/api/posts/{id}/comments/` | Add comment       |
+
+---
+
+## 💬 CHAT APP
+
+### **Models**
+
+```python
+from django.db import models
+from django.conf import settings
+
+class Conversation(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='conversations')
+    is_group = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name or f"Chat {self.id}"
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    text = models.TextField(blank=True)
+    file = models.FileField(upload_to='chat_files/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+```
+
+---
+
+### **Schema Summary**
+
+| Model        | Fields                                           | Relationships              |
+| ------------ | ------------------------------------------------ | -------------------------- |
+| Conversation | id, name, participants, is_group, created_at     | M2M(User)                  |
+| Message      | id, conversation, sender, text, file, created_at | FK(User), FK(Conversation) |
+
+---
+
+### **Endpoints**
+
+| Method | Endpoint                       | Description              |
+| ------ | ------------------------------ | ------------------------ |
+| GET    | `/api/chats/`                  | List user conversations  |
+| POST   | `/api/chats/`                  | Create new conversation  |
+| GET    | `/api/chats/{id}/`             | Get conversation details |
+| POST   | `/api/chats/{id}/messages/`    | Send message             |
+| GET    | `/api/chats/{id}/messages/`    | List messages            |
+| POST   | `/api/chats/{id}/add-user/`    | Add user to group        |
+| POST   | `/api/chats/{id}/remove-user/` | Remove user from group   |
+
+---
+
+## 🧩 Authentication
+
+Use **JWT (SimpleJWT)** for token-based authentication.
+
+```bash
+pip install djangorestframework-simplejwt
+```
+
+### Endpoints:
+
+| Method | Endpoint              | Description              |
+| ------ | --------------------- | ------------------------ |
+| POST   | `/api/token/`         | Get JWT access + refresh |
+| POST   | `/api/token/refresh/` | Refresh access token     |
+
+---
+
+## 🗺️ Directory Structure
+
+```
+social_media/
+│
+├── users/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│
+├── posts/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│
+├── chat/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│
+├── social_media/
+│   ├── settings.py
+│   ├── urls.py
+│
+└── manage.py
+```
+
+---
+
+## 🧠 Optional Enhancements (Future Ideas)
+
+* Notifications (for likes, follows, messages)
+* Activity feed
+* WebSocket-based real-time chat using **Django Channels**
+* Search (users, posts)
+* Pagination, filtering, caching
+* Rate limiting and throttling
+
+
+❌ MISSING Endpoints (Frontend is using but backend doesn't have):
+1. User Authentication & Profile:
+GET /api/auth/user/ - Get current authenticated user info
+Used in: chat.js (line 27)
+Fix: The endpoint exists as /api/users/me/ but frontend is calling /api/auth/user/
+Solution: Either update frontend to use /api/users/me/ OR add a route alias
+2. User Profile Endpoints:
+GET /api/users/<id> - Get user profile by ID
+
+Status: View exists but is empty (needs implementation)
+Used in: Profile pages (implicitly)
+POST /api/users/<id>/follow/ - Follow a user
+
+Status: View exists but is empty (needs implementation)
+Used in: Profile pages and search results
+DELETE /api/users/<id>/follow/ - Unfollow a user
+
+Status: Endpoint doesn't exist
+Used in: Profile pages
+GET /api/users/<id>/followers - Get user's followers list
+
+Status: View exists but is empty (needs implementation)
+Used in: Profile pages
+GET /api/users/<id>/following - Get users that a user is following
+
+Status: View exists but is empty (needs implementation)
+Used in: Profile pages
+3. Search Endpoints:
+GET /api/users/search/?q=<query> - Search for users
+Status: Doesn't exist
+Used in: search.js (currently using mock data)
+Needed for: Search functionality
+4. Notifications Endpoints:
+GET /api/notifications/ - Get user notifications
+
+Status: Doesn't exist (no notifications app)
+Used in: notifications.js (currently using mock data)
+PUT /api/notifications/<id>/read/ - Mark notification as read
+
+Status: Doesn't exist
+Needed for: Notification management

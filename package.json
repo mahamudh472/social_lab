@@ -1,0 +1,12 @@
+{
+  "name": "social-media-frontend",
+  "version": "1.0.0",
+  "description": "Modern social media frontend with Tailwind CSS",
+  "scripts": {
+    "build-css": "tailwindcss -i ./frontend/css/tailwind.css -o ./frontend/css/output.css --watch",
+    "dev": "npm run build-css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}
