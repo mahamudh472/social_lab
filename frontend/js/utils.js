@@ -13,8 +13,11 @@ const apiGet = async (url, requiresAuth = true) => {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const fullUrl = `${API_BASE}${url}`;
+    console.log(`API GET: ${fullUrl}`);
+
     try {
-        const response = await fetch(`${API_BASE}${url}`, { headers });
+        const response = await fetch(fullUrl, { headers });
         if (response.status === 401) {
             localStorage.removeItem('access_token');
             window.location.href = '/login.html';
@@ -58,6 +61,43 @@ const apiPost = async (url, data, requiresAuth = true) => {
     } catch (error) {
         console.error('API POST Error:', error);
         showToast('Error submitting data', 'error');
+    }
+};
+
+const apiPostFormData = async (url, formData, requiresAuth = true) => {
+    const headers = {};
+    
+    if (requiresAuth) {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}${url}`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+        
+        if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login.html';
+            return;
+        }
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to submit data');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('API POST FormData Error:', error);
+        throw error;
     }
 };
 
@@ -171,11 +211,21 @@ function hideLoading() {
 function checkAuth() {
     const token = localStorage.getItem('access_token');
     const publicPages = ['/login.html', '/register.html', '/forgot-password.html'];
-    const currentPage = window.location.pathname;
+    const currentPath = window.location.pathname;
     
-    if (!token && !publicPages.includes(currentPage)) {
+    // Normalize the path (remove leading slashes and ensure .html extension)
+    const normalizedPath = currentPath.startsWith('/') ? currentPath : '/' + currentPath;
+    
+    // Check if current page is a public page
+    const isPublicPage = publicPages.some(page => normalizedPath.endsWith(page) || normalizedPath === page);
+    
+    if (!token && !isPublicPage) {
+        // User not logged in and trying to access protected page
+        console.log('No token found, redirecting to login');
         window.location.href = '/login.html';
-    } else if (token && publicPages.includes(currentPage)) {
+    } else if (token && isPublicPage) {
+        // User logged in and trying to access login/register pages
+        console.log('Already logged in, redirecting to home');
         window.location.href = '/index.html';
     }
 }
@@ -196,6 +246,7 @@ function formatTimeAgo(timestamp) {
 export { 
     apiGet, 
     apiPost, 
+    apiPostFormData,
     apiPut, 
     apiDelete, 
     showToast, 

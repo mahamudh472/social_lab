@@ -57,7 +57,7 @@
                         <button type="button" onclick="window.history.back()" class="btn-secondary flex-1">
                             Cancel
                         </button>
-                        <button type="submit" class="btn-primary flex-1">
+                        <button type="submit" id="submitBtn" class="btn-primary flex-1">
                             Create Post
                         </button>
                     </div>
@@ -67,28 +67,6 @@
     </div>
 
     <script type="module" src="/js/app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const imageInput = document.getElementById('image');
-            const imagePreview = document.getElementById('imagePreview');
-            const uploadArea = document.getElementById('uploadArea');
-            const previewImg = imagePreview.querySelector('img');
-            
-            uploadArea.addEventListener('click', () => imageInput.click());
-            
-            imageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewImg.src = e.target.result;
-                        imagePreview.classList.remove('hidden');
-                        uploadArea.classList.add('hidden');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        });
-    </script>
+    <script type="module" src="/js/create-post.js"></script>
 </body>
 </html>

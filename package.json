@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.3.0"
+  },
+  "dependencies": {
+    "serve": "^14.2.5"
   }
 }

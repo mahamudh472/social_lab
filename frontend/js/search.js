@@ -1,4 +1,4 @@
-import { apiGet, showToast, showLoading, hideLoading } from './utils.js';
+import { apiGet, showToast, showLoading, hideLoading, checkAuth } from './utils.js';
 
 class SearchManager {
     constructor() {
@@ -6,6 +6,9 @@ class SearchManager {
     }
 
     init() {
+        // Check authentication first
+        checkAuth();
+        
         this.initEventListeners();
         this.loadRecentSearches();
     }

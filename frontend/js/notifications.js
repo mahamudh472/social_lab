@@ -1,4 +1,4 @@
-import { apiGet, showToast, showLoading, hideLoading } from './utils.js';
+import { apiGet, showToast, showLoading, hideLoading, checkAuth } from './utils.js';
 
 class NotificationsManager {
     constructor() {
@@ -6,6 +6,9 @@ class NotificationsManager {
     }
 
     async init() {
+        // Check authentication first
+        checkAuth();
+        
         await this.loadNotifications();
     }
 

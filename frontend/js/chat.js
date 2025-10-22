@@ -1,4 +1,4 @@
-import { apiGet, apiPost, showToast, showLoading, hideLoading } from './utils.js';
+import { apiGet, apiPost, showToast, showLoading, hideLoading, checkAuth } from './utils.js';
 
 class ChatManager {
     constructor() {
@@ -11,6 +11,9 @@ class ChatManager {
     }
 
     async init() {
+        // Check authentication first
+        checkAuth();
+        
         try {
             await this.loadCurrentUser();
             

@@ -16,51 +16,22 @@
             <div class="card">
                 <div class="md:flex">
                     <!-- Post Image -->
-                    <div class="md:w-1/2 bg-black flex items-center justify-center">
-                        <img 
-                            src="https://picsum.photos/600/600?random=1" 
-                            alt="Post" 
-                            class="w-full h-96 md:h-auto object-contain"
-                        >
+                    <div class="md:w-1/2 bg-black flex items-center justify-center post-image">
+                        <!-- Image will be loaded here -->
                     </div>
                     
                     <!-- Post Details -->
                     <div class="md:w-1/2 flex flex-col">
                         <!-- Post Header -->
-                        <div class="p-4 border-b border-gray-200">
-                            <div class="flex items-center space-x-3">
-                                <img 
-                                    src="/images/placeholder-avatar.jpg" 
-                                    alt="User" 
-                                    class="w-8 h-8 rounded-full"
-                                >
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-900">johndoe</h3>
-                                </div>
-                                <button class="text-gray-400 hover:text-gray-600">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-                                    </svg>
-                                </button>
-                            </div>
+                        <div class="p-4 border-b border-gray-200 post-header">
+                            <!-- Header will be loaded here -->
                         </div>
                         
                         <!-- Comments Section -->
                         <div class="flex-1 p-4 overflow-y-auto max-h-96">
                             <!-- Caption -->
-                            <div class="flex space-x-3 mb-4">
-                                <img 
-                                    src="/images/placeholder-avatar.jpg" 
-                                    alt="User" 
-                                    class="w-8 h-8 rounded-full flex-shrink-0"
-                                >
-                                <div>
-                                    <p>
-                                        <span class="font-semibold text-gray-900">johndoe</span>
-                                        <span class="text-gray-800">This is an amazing photo from my recent trip to the mountains! The view was absolutely breathtaking. #nature #mountains</span>
-                                    </p>
-                                    <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
-                                </div>
+                            <div class="post-caption">
+                                <!-- Caption will be loaded here -->
                             </div>
                             
                             <!-- Comments -->
@@ -73,8 +44,8 @@
                         <div class="p-4 border-t border-gray-200 space-y-3">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
-                                    <button class="post-like-btn text-red-500 hover:text-red-600">
-                                        <svg class="w-6 h-6" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button class="post-like-btn text-gray-600 hover:text-red-500">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                         </svg>
                                     </button>
@@ -91,13 +62,13 @@
                                 </div>
                             </div>
                             
-                            <p class="text-sm font-semibold text-gray-900">1,284 likes</p>
-                            <p class="text-xs text-gray-500">2 hours ago</p>
+                            <p class="text-sm font-semibold text-gray-900 likes-count">0 likes</p>
+                            <p class="text-xs text-gray-500 post-timestamp">Just now</p>
                         </div>
                         
                         <!-- Add Comment -->
                         <div class="p-4 border-t border-gray-200">
-                            <form class="flex space-x-2">
+                            <form class="flex space-x-2 comment-form">
                                 <input 
                                     type="text" 
                                     placeholder="Add a comment..." 
@@ -112,33 +83,7 @@
         </div>
     </div>
 
-    <script type="module" src="/js/app.js"></script>
-    <script>
-        // Load mock comments
-        document.addEventListener('DOMContentLoaded', function() {
-            const commentsContainer = document.getElementById('commentsContainer');
-            const mockComments = [
-                { user: 'alice', text: 'Amazing shot! 📸', time: '1 hour ago' },
-                { user: 'bob', text: 'Where was this taken?', time: '45 minutes ago' },
-                { user: 'charlie', text: 'Beautiful scenery!', time: '30 minutes ago' }
-            ];
-            
-            mockComments.forEach(comment => {
-                const commentDiv = document.createElement('div');
-                commentDiv.className = 'flex space-x-3';
-                commentDiv.innerHTML = `
-                    <img src="/images/placeholder-avatar.jpg" alt="${comment.user}" class="w-8 h-8 rounded-full flex-shrink-0">
-                    <div class="flex-1">
-                        <p>
-                            <span class="font-semibold text-gray-900">${comment.user}</span>
-                            <span class="text-gray-800">${comment.text}</span>
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">${comment.time}</p>
-                    </div>
-                `;
-                commentsContainer.appendChild(commentDiv);
-            });
-        });
-    </script>
+    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/post-detail.js"></script>
 </body>
 </html>

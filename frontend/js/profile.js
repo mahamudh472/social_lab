@@ -1,4 +1,4 @@
-import { apiGet, showToast, showLoading, hideLoading } from './utils.js';
+import { apiGet, showToast, showLoading, hideLoading, checkAuth } from './utils.js';
 
 class ProfileManager {
     constructor() {
@@ -6,6 +6,9 @@ class ProfileManager {
     }
 
     async init() {
+        // Check authentication first
+        checkAuth();
+        
         await this.loadProfilePosts();
         this.initEventListeners();
     }
@@ -58,7 +61,7 @@ class ProfileManager {
                 src="${post.image}" 
                 alt="Post" 
                 class="w-full h-full object-cover"
-                onclick="window.location.href='/post.html?id=${post.id}'"
+                onclick="window.location.href='post.html#id=${post.id}'"
             >
             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center space-x-4 opacity-0 group-hover:opacity-100">
                 <div class="text-white flex items-center space-x-1">
