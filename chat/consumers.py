@@ -59,6 +59,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'id': msg.id,
             'text': msg.text,  # Keep as 'text' for frontend
             'message': msg.text,  # Add this for compatibility
+            'file': msg.file.url if msg.file else None,
             'sender': msg.sender.username,
             'timestamp': str(msg.created_at)
         }

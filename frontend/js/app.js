@@ -1,8 +1,9 @@
-import { checkAuth, showToast } from './utils.js';
+import { checkAuth, showToast, apiGet } from './utils.js';
 import AuthManager from './auth.js';
 
 class SocialMediaApp {
     constructor() {
+        this.currentUser = null;
         this.init();
     }
 
@@ -16,6 +17,9 @@ class SocialMediaApp {
     }
 
     async loadComponents() {
+        // Load current user profile first
+        await this.loadCurrentUser();
+        
         // Load navbar
         try {
             const navbarResponse = await fetch('/components/navbar.html');
@@ -23,6 +27,7 @@ class SocialMediaApp {
             const navbarPlaceholder = document.getElementById('navbar-placeholder');
             if (navbarPlaceholder) {
                 navbarPlaceholder.innerHTML = navbarHTML;
+                this.updateNavbarProfile();
                 this.initNavbar();
             }
         } catch (error) {
@@ -43,6 +48,50 @@ class SocialMediaApp {
                 console.error('Failed to load sidebar:', error);
             }
         }
+    }
+
+    async loadCurrentUser() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+            
+            this.currentUser = await apiGet('/users/me/');
+            console.log('Current user loaded:', this.currentUser);
+            console.log('Profile image value:', this.currentUser?.profile_image);
+        } catch (error) {
+            console.error('Failed to load current user:', error);
+        }
+    }
+
+    updateNavbarProfile() {
+        if (!this.currentUser) {
+            console.log('No current user data to update navbar');
+            return;
+        }
+        
+        console.log('Updating navbar with user:', this.currentUser);
+        
+        const profileImages = document.querySelectorAll('#profileMenuButton img');
+        console.log('Found profile images in navbar:', profileImages.length);
+        
+        profileImages.forEach(img => {
+            if (this.currentUser.profile_image) {
+                // Handle both full URLs and relative paths
+                let imageUrl = this.currentUser.profile_image;
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = `http://localhost:8000${imageUrl}`;
+                }
+                console.log('Setting navbar image to:', imageUrl);
+                img.src = imageUrl;
+                img.onerror = function() {
+                    console.log('Image load failed, using placeholder');
+                    this.src = '/images/placeholder-avatar.jpg';
+                };
+            } else {
+                console.log('No profile image, using placeholder');
+                img.src = '/images/placeholder-avatar.jpg';
+            }
+        });
     }
 
     initNavbar() {
@@ -153,8 +202,18 @@ class SocialMediaApp {
 }
 
 // Initialize the app
+let appInstance = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    new SocialMediaApp();
+    appInstance = new SocialMediaApp();
 });
+
+// Export function to reload user profile (useful after profile updates)
+export const reloadUserProfile = async () => {
+    if (appInstance) {
+        await appInstance.loadCurrentUser();
+        appInstance.updateNavbarProfile();
+    }
+};
 
 export default SocialMediaApp;

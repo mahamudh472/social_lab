@@ -5,6 +5,7 @@ class PostsManager {
         this.currentPage = 1;
         this.hasMore = true;
         this.postsCache = [];
+        this.currentUser = null;
         this.init();
     }
 
@@ -12,8 +13,32 @@ class PostsManager {
         // Check authentication first
         checkAuth();
         
+        await this.loadCurrentUser();
         await this.loadPosts();
         this.initEventListeners();
+    }
+
+    async loadCurrentUser() {
+        try {
+            this.currentUser = await apiGet('/users/me/');
+            this.updateCreatePostAvatar();
+        } catch (error) {
+            console.error('Failed to load current user:', error);
+        }
+    }
+
+    updateCreatePostAvatar() {
+        const avatar = document.getElementById('createPostAvatar');
+        if (avatar && this.currentUser && this.currentUser.profile_image) {
+            let imageUrl = this.currentUser.profile_image;
+            if (imageUrl && !imageUrl.startsWith('http')) {
+                imageUrl = `http://localhost:8000${imageUrl}`;
+            }
+            avatar.src = imageUrl;
+            avatar.onerror = function() {
+                this.src = '/images/placeholder-avatar.jpg';
+            };
+        }
     }
 
     async loadPosts() {
@@ -115,6 +140,7 @@ class PostsManager {
         
         // Get user info - handle different API response structures
         const username = post.user?.username || post.username || 'anonymous';
+        const userId = post.user?.id || post.user_id || null;
         const userImage = post.user?.profile_image || post.profile_image || '/images/placeholder-avatar.jpg';
         
         // Handle image URL - support both full URLs and relative paths
@@ -138,8 +164,26 @@ class PostsManager {
         // Check if user liked the post
         const liked = post.liked || false;
         
+        // Check follow status
+        const isFollowing = post.is_following;
+        const isOwnPost = isFollowing === null;
+        
         // Format time
         const timeAgo = formatTimeAgo(post.created_at);
+        
+        // Follow button HTML
+        let followButtonHTML = '';
+        if (!isOwnPost && userId) {
+            followButtonHTML = `
+                <button 
+                    class="follow-btn text-sm font-semibold px-4 py-1 rounded transition-colors ${isFollowing ? 'text-gray-700 hover:text-gray-900' : 'text-blue-600 hover:text-blue-700'}"
+                    data-user-id="${userId}"
+                    data-following="${isFollowing}"
+                >
+                    ${isFollowing ? 'Following' : 'Follow'}
+                </button>
+            `;
+        }
         
         postDiv.innerHTML = `
             <!-- Post Header -->
@@ -148,19 +192,23 @@ class PostsManager {
                     <img 
                         src="${userImage}" 
                         alt="${username}" 
-                        class="w-10 h-10 rounded-full object-cover"
+                        class="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         onerror="this.src='/images/placeholder-avatar.jpg'"
+                        onclick="window.location.href='profile?id=${userId || ''}'"
                     >
                     <div>
-                        <h3 class="font-semibold text-gray-900">${username}</h3>
+                        <h3 class="font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors" onclick="window.location.href='profile?id=${userId || ''}'">${username}</h3>
                         <p class="text-sm text-gray-500">${timeAgo}</p>
                     </div>
                 </div>
-                <button class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-                    </svg>
-                </button>
+                <div class="flex items-center space-x-2">
+                    ${followButtonHTML}
+                    <button class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Post Image -->
@@ -209,7 +257,7 @@ class PostsManager {
                 <!-- Caption -->
                 ${caption ? `
                 <div class="mb-2">
-                    <span class="font-semibold text-gray-900">${username}</span>
+                    <span class="font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors" onclick="window.location.href='profile?id=${userId || ''}'">${username}</span>
                     <span class="text-gray-800"> ${caption}</span>
                 </div>
                 ` : ''}
@@ -240,6 +288,16 @@ class PostsManager {
         // Add like button functionality
         const likeBtn = postDiv.querySelector('.post-like-btn');
         likeBtn.addEventListener('click', () => this.handleLike(post.id, likeBtn, postDiv));
+
+        // Add follow button functionality
+        const followBtn = postDiv.querySelector('.follow-btn');
+        if (followBtn) {
+            followBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const userId = followBtn.dataset.userId;
+                this.handleFollow(userId, followBtn);
+            });
+        }
 
         // Add click handler to post image to view details
         const imageContainer = postDiv.querySelector('.post-image-container');
@@ -302,6 +360,47 @@ class PostsManager {
                 button.querySelector('svg').setAttribute('fill', 'none');
                 likesCountEl.textContent = `${currentCount} likes`;
             }
+        }
+    }
+
+    async handleFollow(userId, button) {
+        const isFollowing = button.dataset.following === 'true';
+        
+        try {
+            // Optimistic UI update
+            if (isFollowing) {
+                button.textContent = 'Follow';
+                button.classList.remove('text-gray-700', 'hover:text-gray-900');
+                button.classList.add('text-blue-600', 'hover:text-blue-700');
+                button.dataset.following = 'false';
+            } else {
+                button.textContent = 'Following';
+                button.classList.remove('text-blue-600', 'hover:text-blue-700');
+                button.classList.add('text-gray-700', 'hover:text-gray-900');
+                button.dataset.following = 'true';
+            }
+            
+            // Call API
+            const response = await apiPost(`/users/${userId}/follow/`, {}, true);
+            
+            if (response) {
+                showToast(response.message, 'success');
+            }
+        } catch (error) {
+            console.error('Error toggling follow:', error);
+            // Revert UI on error
+            if (isFollowing) {
+                button.textContent = 'Following';
+                button.classList.remove('text-blue-600', 'hover:text-blue-700');
+                button.classList.add('text-gray-700', 'hover:text-gray-900');
+                button.dataset.following = 'true';
+            } else {
+                button.textContent = 'Follow';
+                button.classList.remove('text-gray-700', 'hover:text-gray-900');
+                button.classList.add('text-blue-600', 'hover:text-blue-700');
+                button.dataset.following = 'false';
+            }
+            showToast('Error updating follow status', 'error');
         }
     }
 

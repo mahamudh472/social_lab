@@ -19,6 +19,7 @@
                     <!-- Profile Picture -->
                     <div class="flex-shrink-0">
                         <img 
+                            id="profileImage"
                             src="/images/placeholder-avatar.jpg" 
                             alt="Profile" 
                             class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
@@ -28,7 +29,7 @@
                     <!-- Profile Info -->
                     <div class="flex-1 text-center md:text-left">
                         <div class="flex flex-col md:flex-row md:items-center md:space-x-6 mb-4">
-                            <h1 class="text-2xl font-bold text-gray-900">johndoe</h1>
+                            <h1 id="profileUsername" class="text-2xl font-bold text-gray-900">Loading...</h1>
                             <div class="flex items-center space-x-4 mt-2 md:mt-0">
                                 <button id="editProfileBtn" class="btn-secondary text-sm">
                                     Edit Profile
@@ -47,24 +48,22 @@
                         <!-- Stats -->
                         <div class="flex justify-center md:justify-start space-x-8 mb-4">
                             <div class="text-center">
-                                <span class="block font-bold text-gray-900">152</span>
+                                <span id="postsCount" class="block font-bold text-gray-900">0</span>
                                 <span class="text-sm text-gray-600">Posts</span>
                             </div>
-                            <div class="text-center">
-                                <span class="block font-bold text-gray-900">1,284</span>
+                            <div class="text-center cursor-pointer" id="followersSection">
+                                <span id="followersCount" class="block font-bold text-gray-900">0</span>
                                 <span class="text-sm text-gray-600">Followers</span>
                             </div>
-                            <div class="text-center">
-                                <span class="block font-bold text-gray-900">367</span>
+                            <div class="text-center cursor-pointer" id="followingSection">
+                                <span id="followingCount" class="block font-bold text-gray-900">0</span>
                                 <span class="text-sm text-gray-600">Following</span>
                             </div>
                         </div>
                         
                         <!-- Bio -->
-                        <div class="text-gray-800">
-                            <p class="font-semibold">John Doe</p>
-                            <p>Digital creator • Photography enthusiast • Travel lover</p>
-                            <p class="text-blue-600">www.johndoe.com</p>
+                        <div id="profileBio" class="text-gray-800">
+                            <p class="text-gray-500 italic">Loading...</p>
                         </div>
                     </div>
                 </div>

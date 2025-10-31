@@ -1,8 +1,46 @@
 // API base URL - update this to match your Django backend
 const API_BASE = 'http://localhost:8000/api';
 
+// Token refresh function
+const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+        console.log('No refresh token found');
+        return false;
+    }
+
+    try {
+        console.log('Attempting to refresh access token...');
+        const response = await fetch(`${API_BASE}/auth/token/refresh/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh: refreshToken }),
+        });
+
+        if (!response.ok) {
+            console.log('Token refresh failed');
+            // Refresh token is invalid or expired
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            return false;
+        }
+
+        const data = await response.json();
+        console.log('Token refreshed successfully');
+        localStorage.setItem('access_token', data.access);
+        return true;
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        return false;
+    }
+};
+
 // Helper functions for API calls
-const apiGet = async (url, requiresAuth = true) => {
+const apiGet = async (url, requiresAuth = true, showErrorToast = true) => {
     const headers = {};
     if (requiresAuth) {
         const token = localStorage.getItem('access_token');
@@ -17,16 +55,35 @@ const apiGet = async (url, requiresAuth = true) => {
     console.log(`API GET: ${fullUrl}`);
 
     try {
-        const response = await fetch(fullUrl, { headers });
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login.html';
-            return;
+        let response = await fetch(fullUrl, { headers });
+        
+        // If 401, try to refresh token and retry once
+        if (response.status === 401 && requiresAuth) {
+            console.log('Got 401, attempting token refresh...');
+            const refreshed = await refreshAccessToken();
+            
+            if (refreshed) {
+                // Retry the request with new token
+                const newToken = localStorage.getItem('access_token');
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(fullUrl, { headers });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         return await response.json();
     } catch (error) {
         console.error('API GET Error:', error);
-        showToast('Error fetching data', 'error');
+        if (showErrorToast) {
+            showToast('Error fetching data', 'error');
+        }
+        throw error;
     }
 };
 
@@ -45,16 +102,31 @@ const apiPost = async (url, data, requiresAuth = true) => {
     }
 
     try {
-        const response = await fetch(`${API_BASE}${url}`, {
+        let response = await fetch(`${API_BASE}${url}`, {
             method: 'POST',
             headers,
             body: JSON.stringify(data),
         });
         
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login.html';
-            return;
+        // If 401, try to refresh token and retry once
+        if (response.status === 401 && requiresAuth) {
+            console.log('Got 401, attempting token refresh...');
+            const refreshed = await refreshAccessToken();
+            
+            if (refreshed) {
+                // Retry the request with new token
+                const newToken = localStorage.getItem('access_token');
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(`${API_BASE}${url}`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(data),
+                });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
         }
         
         return await response.json();
@@ -77,16 +149,31 @@ const apiPostFormData = async (url, formData, requiresAuth = true) => {
     }
 
     try {
-        const response = await fetch(`${API_BASE}${url}`, {
+        let response = await fetch(`${API_BASE}${url}`, {
             method: 'POST',
             headers,
             body: formData,
         });
         
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login.html';
-            return;
+        // If 401, try to refresh token and retry once
+        if (response.status === 401 && requiresAuth) {
+            console.log('Got 401, attempting token refresh...');
+            const refreshed = await refreshAccessToken();
+            
+            if (refreshed) {
+                // Retry the request with new token
+                const newToken = localStorage.getItem('access_token');
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(`${API_BASE}${url}`, {
+                    method: 'POST',
+                    headers,
+                    body: formData,
+                });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
         }
         
         if (!response.ok) {
@@ -108,20 +195,37 @@ const apiPut = async (url, data) => {
         return;
     }
 
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+
     try {
-        const response = await fetch(`${API_BASE}${url}`, {
+        let response = await fetch(`${API_BASE}${url}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
+            headers,
             body: JSON.stringify(data),
         });
         
+        // If 401, try to refresh token and retry once
         if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login.html';
-            return;
+            console.log('Got 401, attempting token refresh...');
+            const refreshed = await refreshAccessToken();
+            
+            if (refreshed) {
+                // Retry the request with new token
+                const newToken = localStorage.getItem('access_token');
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(`${API_BASE}${url}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(data),
+                });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
         }
         
         return await response.json();
@@ -138,18 +242,34 @@ const apiDelete = async (url) => {
         return;
     }
 
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+    };
+
     try {
-        const response = await fetch(`${API_BASE}${url}`, {
+        let response = await fetch(`${API_BASE}${url}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
+            headers,
         });
         
+        // If 401, try to refresh token and retry once
         if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login.html';
-            return;
+            console.log('Got 401, attempting token refresh...');
+            const refreshed = await refreshAccessToken();
+            
+            if (refreshed) {
+                // Retry the request with new token
+                const newToken = localStorage.getItem('access_token');
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(`${API_BASE}${url}`, {
+                    method: 'DELETE',
+                    headers,
+                });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
         }
         
         return response.ok;
@@ -249,6 +369,7 @@ export {
     apiPostFormData,
     apiPut, 
     apiDelete, 
+    refreshAccessToken,
     showToast, 
     showLoading, 
     hideLoading, 

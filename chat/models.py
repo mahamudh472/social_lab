@@ -15,6 +15,7 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField(blank=True)
     file = models.FileField(upload_to='chat_files/', blank=True, null=True)
+    deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     

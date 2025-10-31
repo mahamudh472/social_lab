@@ -23,6 +23,19 @@ class PostListView(generics.ListAPIView):
         context['request'] = self.request
         return context
 
+class UserPostListView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    pagination_class = PostPagination
+    
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        return Post.objects.filter(user__id=user_id).order_by('-created_at')
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
 
 
 class PostCreateView(generics.CreateAPIView):

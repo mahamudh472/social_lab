@@ -80,6 +80,7 @@ class PostDetailManager {
     renderPost(post) {
         // Get user info - handle both nested and flat structures
         const username = post.user?.username || post.username || 'anonymous';
+        const userId = post.user?.id || post.user_id || null;
         const userImage = post.user?.profile_image || post.profile_image || '/images/placeholder-avatar.jpg';
         
         // Handle image URL
@@ -104,11 +105,12 @@ class PostDetailManager {
                     <img 
                         src="${userImage}" 
                         alt="${username}" 
-                        class="w-8 h-8 rounded-full object-cover"
+                        class="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         onerror="this.src='/images/placeholder-avatar.jpg'"
+                        onclick="window.location.href='profile?id=${userId || ''}'"
                     >
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900">${username}</h3>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors" onclick="window.location.href='profile?id=${userId || ''}'">${username}</h3>
                     </div>
                 </div>
                 <button class="text-gray-400 hover:text-gray-600">
@@ -150,12 +152,13 @@ class PostDetailManager {
                     <img 
                         src="${userImage}" 
                         alt="${username}" 
-                        class="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+                        class="w-8 h-8 rounded-full flex-shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         onerror="this.src='/images/placeholder-avatar.jpg'"
+                        onclick="window.location.href='profile.html${userId ? '?id=' + userId : ''}'"
                     >
                     <div>
                         <p>
-                            <span class="font-semibold text-gray-900">${username}</span>
+                            <span class="font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors" onclick="window.location.href='profile?id=${userId || ''}'">${username}</span>
                             <span class="text-gray-800"> ${caption}</span>
                         </p>
                         <p class="text-xs text-gray-500 mt-1">${timeAgo}</p>
