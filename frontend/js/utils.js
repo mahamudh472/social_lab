@@ -1,5 +1,5 @@
 // API base URL - update this to match your Django backend
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 // Token refresh function
 const refreshAccessToken = async () => {

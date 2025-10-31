@@ -37,6 +37,21 @@ class PostSerializer(serializers.ModelSerializer):
                 return None  # It's the user's own post
             return request.user.following.filter(pk=obj.user.pk).exists()
         return False
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Return relative URLs (e.g. /media/...) instead of absolute ones
+        if instance.image and getattr(instance.image, 'url', None):
+            representation['image'] = instance.image.url
+        else:
+            representation['image'] = None
+
+        if instance.user and getattr(instance.user, 'profile_image', None) and getattr(instance.user.profile_image, 'url', None):
+            representation['profile_image'] = instance.user.profile_image.url
+        else:
+            representation['profile_image'] = None
+
+        return representation
 
 
 class CommentSerializer(serializers.ModelSerializer):

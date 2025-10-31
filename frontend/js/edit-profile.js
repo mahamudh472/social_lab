@@ -59,11 +59,8 @@ class EditProfileManager {
         const profileImagePreview = document.getElementById('profileImagePreview');
         if (profileImagePreview) {
             if (user.profile_image) {
-                // Handle both full URLs and relative paths
-                let imageUrl = user.profile_image;
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = `http://localhost:8000${imageUrl}`;
-                }
+                // Handle both full URLs and relative paths; keep relative paths so nginx serves them from same origin
+                const imageUrl = user.profile_image;
                 profileImagePreview.src = imageUrl;
                 profileImagePreview.onerror = function() {
                     this.src = '/images/placeholder-avatar.jpg';
@@ -242,7 +239,7 @@ class EditProfileManager {
             // If you want to update these, you'll need to modify the backend serializer
 
             // Send update request using PATCH
-            const response = await fetch('http://localhost:8000/api/users/update/', {
+            const response = await fetch('/api/users/update/', {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -257,7 +254,7 @@ class EditProfileManager {
                 
                 if (refreshed) {
                     // Retry with new token
-                    const retryResponse = await fetch('http://localhost:8000/api/users/update/', {
+                    const retryResponse = await fetch('/api/users/update/', {
                         method: 'PATCH',
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

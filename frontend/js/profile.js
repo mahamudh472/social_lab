@@ -181,11 +181,8 @@ class ProfileManager {
         const profileImg = document.getElementById('profileImage');
         if (profileImg) {
             if (user.profile_image) {
-                // Handle both full URLs and relative paths
-                let imageUrl = user.profile_image;
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = `http://localhost:8000${imageUrl}`;
-                }
+                // Handle both full URLs and relative paths; leave relative paths intact so nginx serves them from same origin
+                const imageUrl = user.profile_image;
                 console.log('Setting profile image to:', imageUrl);
                 profileImg.src = imageUrl;
                 profileImg.onerror = function() {

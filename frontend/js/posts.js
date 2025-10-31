@@ -30,10 +30,8 @@ class PostsManager {
     updateCreatePostAvatar() {
         const avatar = document.getElementById('createPostAvatar');
         if (avatar && this.currentUser && this.currentUser.profile_image) {
-            let imageUrl = this.currentUser.profile_image;
-            if (imageUrl && !imageUrl.startsWith('http')) {
-                imageUrl = `http://localhost:8000${imageUrl}`;
-            }
+            // Leave relative paths as-is so they are requested from the same origin (nginx)
+            const imageUrl = this.currentUser.profile_image;
             avatar.src = imageUrl;
             avatar.onerror = function() {
                 this.src = '/images/placeholder-avatar.jpg';
@@ -145,10 +143,7 @@ class PostsManager {
         
         // Handle image URL - support both full URLs and relative paths
         let imageUrl = post.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-            // Prepend API base URL for relative paths
-            imageUrl = `http://localhost:8000${imageUrl}`;
-        }
+        // If the backend returned a relative path (e.g. /media/...), keep it relative so the browser requests it from the same origin
         
         // Handle missing images
         const hasImage = imageUrl && imageUrl !== 'null' && imageUrl !== '';

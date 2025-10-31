@@ -303,7 +303,8 @@ class ChatManager {
                 // Check if message has a file attachment
                 if (msg.file) {
                     const fileName = msg.file.split('/').pop();
-                    const fileUrl = msg.file.startsWith('http') ? msg.file : `http://localhost:8000${msg.file}`;
+                    // If msg.file is a relative path, request it from the same origin (nginx)
+                    const fileUrl = msg.file;
                     
                     messageContent = this.renderFileAttachment(fileUrl, fileName, isOwn);
                     if (msg.text) {
@@ -316,13 +317,13 @@ class ChatManager {
             
             // Three dots menu (only for own messages that are not deleted)
             const menuHTML = (isOwn && !msg.deleted) ? `
-                <div class="absolute ${isOwn ? 'left-0 -translate-x-full -ml-2' : 'right-0 translate-x-full mr-2'} top-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="message-menu-btn p-1 rounded hover:bg-gray-200 text-gray-500" data-message-id="${msg.id}">
+                <div class="relative ${isOwn ? 'order-first mr-2' : 'ml-2'}">
+                    <button class="message-menu-btn p-1 rounded hover:bg-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" data-message-id="${msg.id}">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                         </svg>
                     </button>
-                    <div class="message-dropdown hidden absolute ${isOwn ? 'left-0' : 'right-0'} mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]" data-message-id="${msg.id}">
+                    <div class="message-dropdown hidden absolute ${isOwn ? 'right-0' : 'left-0'} mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]" data-message-id="${msg.id}">
                         <button class="delete-message-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50" data-message-id="${msg.id}">
                             Delete
                         </button>
@@ -331,14 +332,16 @@ class ChatManager {
             ` : '';
             
             messageDiv.innerHTML = `
-                ${menuHTML}
-                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    isOwn 
-                        ? 'bg-blue-600 text-white rounded-br-none' 
-                        : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                } ${msg.deleted ? 'opacity-60' : ''}">
-                    ${messageContent}
-                    <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+                <div class="flex items-start ${isOwn ? '' : 'flex-row'}">
+                    ${menuHTML}
+                    <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        isOwn 
+                            ? 'bg-blue-600 text-white rounded-br-none' 
+                            : 'bg-gray-200 text-gray-900 rounded-bl-none'
+                    } ${msg.deleted ? 'opacity-60' : ''}">
+                        ${messageContent}
+                        <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+                    </div>
                 </div>
             `;
             
@@ -560,19 +563,66 @@ class ChatManager {
             : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'}`;
+        messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} group relative`;
+        
+        // Three dots menu (only for own messages)
+        const menuHTML = isOwn ? `
+            <div class="relative order-first mr-2">
+                <button class="message-menu-btn p-1 rounded hover:bg-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" data-message-id="temp-${Date.now()}">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+                <div class="message-dropdown hidden absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]" data-message-id="temp-${Date.now()}">
+                    <button class="delete-message-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50" data-message-id="temp-${Date.now()}">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        ` : '';
+        
         messageDiv.innerHTML = `
-            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                isOwn 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-            }">
-                <p>${this.escapeHtml(messageText)}</p>
-                <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+            <div class="flex items-start">
+                ${menuHTML}
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwn 
+                        ? 'bg-blue-600 text-white rounded-br-none' 
+                        : 'bg-gray-200 text-gray-900 rounded-bl-none'
+                }">
+                    <p>${this.escapeHtml(messageText)}</p>
+                    <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+                </div>
             </div>
         `;
 
         container.appendChild(messageDiv);
+        
+        // Add event listeners for menu if own message
+        if (isOwn) {
+            const menuBtn = messageDiv.querySelector('.message-menu-btn');
+            const dropdown = messageDiv.querySelector('.message-dropdown');
+            const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+            
+            if (menuBtn && dropdown) {
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close all other dropdowns
+                    document.querySelectorAll('.message-dropdown').forEach(dd => {
+                        if (dd !== dropdown) dd.classList.add('hidden');
+                    });
+                    dropdown.classList.toggle('hidden');
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // For temp messages, just show a toast (they'll be replaced by real messages soon)
+                    showToast('Please wait for message to be sent', 'info');
+                });
+            }
+        }
+        
         this.scrollToBottom(container);
     }
 
@@ -652,6 +702,12 @@ class ChatManager {
             try {
                 this.websocket.send(JSON.stringify({ message }));
                 console.log('[WebSocket] Message sent');
+                
+                // Reload messages after a short delay to get the real message with ID
+                setTimeout(async () => {
+                    await this.reloadMessages();
+                }, 500);
+                
                 return;
             } catch (error) {
                 console.error('[WebSocket] Send error:', error);
@@ -665,13 +721,27 @@ class ChatManager {
         await this.sendMessageViaAPI(message);
     }
 
+    async reloadMessages() {
+        try {
+            const messagesData = await apiGet(`/chats/${this.currentConversationId}/messages/`);
+            if (messagesData) {
+                this.renderMessages(messagesData);
+            }
+        } catch (error) {
+            console.error('Failed to reload messages:', error);
+        }
+    }
+
     async sendMessageViaAPI(message) {
         try {
             const response = await apiPost(`/chats/${this.currentConversationId}/messages/`, {
                 text: message
             });
 
-            if (!response) {
+            if (response) {
+                // Reload messages to get the real message with proper ID
+                await this.reloadMessages();
+            } else {
                 showToast('Failed to send message', 'error');
             }
         } catch (error) {
@@ -756,7 +826,7 @@ class ChatManager {
             try {
                 const token = localStorage.getItem('access_token');
                 const response = await fetch(
-                    `http://localhost:8000/api/chats/${this.currentConversationId}/messages/${messageId}/delete/`,
+                    `/api/chats/${this.currentConversationId}/messages/${messageId}/delete/`,
                     {
                         method: 'DELETE',
                         headers: {
@@ -952,14 +1022,16 @@ class ChatManager {
         });
 
         const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'}`;
+        messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} group relative`;
+        messageDiv.dataset.messageId = messageData.id || `temp-${Date.now()}`;
         
         let messageContent = '';
         
         // Check if message has a file attachment
         if (messageData.file) {
             const fileName = messageData.file.split('/').pop();
-            const fileUrl = messageData.file.startsWith('http') ? messageData.file : `http://localhost:8000${messageData.file}`;
+            // Use relative path directly so file is loaded from same origin
+            const fileUrl = messageData.file;
             
             messageContent = this.renderFileAttachment(fileUrl, fileName, isOwn);
             if (messageData.text) {
@@ -969,18 +1041,63 @@ class ChatManager {
             messageContent = `<p>${this.escapeHtml(messageData.text || '')}</p>`;
         }
 
+        // Three dots menu (only for own messages)
+        const menuHTML = isOwn ? `
+            <div class="relative order-first mr-2">
+                <button class="message-menu-btn p-1 rounded hover:bg-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" data-message-id="${messageData.id || ''}">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+                <div class="message-dropdown hidden absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]" data-message-id="${messageData.id || ''}">
+                    <button class="delete-message-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50" data-message-id="${messageData.id || ''}">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        ` : '';
+
         messageDiv.innerHTML = `
-            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                isOwn 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-            }">
-                ${messageContent}
-                <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+            <div class="flex items-start">
+                ${menuHTML}
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwn 
+                        ? 'bg-blue-600 text-white rounded-br-none' 
+                        : 'bg-gray-200 text-gray-900 rounded-bl-none'
+                }">
+                    ${messageContent}
+                    <p class="text-xs opacity-70 mt-1 text-right">${time}</p>
+                </div>
             </div>
         `;
 
         container.appendChild(messageDiv);
+        
+        // Add event listeners for menu if own message
+        if (isOwn && messageData.id) {
+            const menuBtn = messageDiv.querySelector('.message-menu-btn');
+            const dropdown = messageDiv.querySelector('.message-dropdown');
+            const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+            
+            if (menuBtn && dropdown) {
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close all other dropdowns
+                    document.querySelectorAll('.message-dropdown').forEach(dd => {
+                        if (dd !== dropdown) dd.classList.add('hidden');
+                    });
+                    dropdown.classList.toggle('hidden');
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleDeleteMessage(messageData.id);
+                });
+            }
+        }
+        
         this.scrollToBottom(container);
     }
 
@@ -999,7 +1116,7 @@ class ChatManager {
             }
 
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://localhost:8000/api/chats/${this.currentConversationId}/messages/upload/`, {
+            const response = await fetch(`/api/chats/${this.currentConversationId}/messages/upload/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1016,8 +1133,8 @@ class ChatManager {
             // Clear file selection
             this.clearFileSelection();
 
-            // Add message to UI with file data from server response
-            this.addFileMessageToUI(data, true);
+            // Reload messages to get the proper message with ID
+            await this.reloadMessages();
 
             showToast('File sent successfully', 'success');
 

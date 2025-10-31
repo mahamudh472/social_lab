@@ -85,9 +85,7 @@ class PostDetailManager {
         
         // Handle image URL
         let imageUrl = post.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = `http://localhost:8000${imageUrl}`;
-        }
+        // If the backend returned a relative path, keep it relative so it will be requested from the same origin (nginx)
         
         const hasImage = imageUrl && imageUrl !== 'null' && imageUrl !== '';
         const displayImage = hasImage ? imageUrl : '/images/placeholder-post.svg';
