@@ -14,7 +14,7 @@ services:
     env_file:
       - .env
     expose:
-      - 8000:8000
+      - 8000
   nginx:
     image: nginx:latest
     container_name: nginx
